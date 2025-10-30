@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..security.deps import get_db
+from ...security.deps import get_db
 import math
 
 router = APIRouter(tags=['quality'], prefix='/quality')

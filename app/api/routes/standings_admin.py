@@ -6,7 +6,7 @@ Features: Standings refresh trigger, League finalize, PostgreSQL integration
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..security.deps import get_db
+from ...security.deps import get_db
 
 router = APIRouter(tags=['standings-admin'], prefix='/admin/standings')
 

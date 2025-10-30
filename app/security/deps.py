@@ -25,3 +25,15 @@ def get_current_user(token: str | None = Header(default=None, alias="Authorizati
         return verify_token(tok, scope="access")
     except Exception as e:
         raise HTTPException(401, detail="Invalid token")
+
+def get_current_user_optional(token: str | None = Header(default=None, alias="Authorization")):
+    """
+    Optional version of get_current_user - returns None if no token or invalid token
+    """
+    if not token or not token.lower().startswith("bearer "):
+        return None
+    tok = token.split(" ", 1)[1]
+    try:
+        return verify_token(tok, scope="access")
+    except Exception:
+        return None

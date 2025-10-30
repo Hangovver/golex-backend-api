@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import hashlib, math, random
 
-from ..security.deps import get_db
+from ...security.deps import get_db
 
 router = APIRouter(tags=['fixtures'], prefix='/fixtures')
 

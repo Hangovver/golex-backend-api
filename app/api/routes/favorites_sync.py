@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 try:
-    from ..security.deps import get_db, get_current_user_optional
+    from ...security.deps import get_db, get_current_user_optional
 except Exception:
     def get_db(): return None
     def get_current_user_optional(): return {'id':'demo-user'}

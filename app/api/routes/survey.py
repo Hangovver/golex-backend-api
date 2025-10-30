@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..security.deps import get_db, get_current_user_optional
+from ...security.deps import get_db, get_current_user_optional
 from ..security.rbac import require_role
 
 router = APIRouter(tags=['survey'], prefix='/survey')

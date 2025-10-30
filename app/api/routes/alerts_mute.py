@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..security.deps import get_db
+from ...security.deps import get_db
 
 router = APIRouter(tags=['admin'], prefix='/admin/alerts')
 

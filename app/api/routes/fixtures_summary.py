@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from typing import List
 import hashlib, random
-from ..security.deps import get_db  # unused but consistent signature
+from ...security.deps import get_db  # unused but consistent signature
 
 router = APIRouter(tags=['fixtures'], prefix='/fixtures')
 

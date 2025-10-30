@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..security.deps import get_db
+from ...security.deps import get_db
 
 router = APIRouter(tags=['notify'], prefix='/notify/prefs')
 

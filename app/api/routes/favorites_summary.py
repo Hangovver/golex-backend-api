@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..security.deps import get_db, get_current_user_optional
+from ...security.deps import get_db, get_current_user_optional
 
 router = APIRouter(tags=['favorites'], prefix='/favorites')
 
