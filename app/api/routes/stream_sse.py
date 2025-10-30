@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from starlette.responses import StreamingResponse
 import asyncio, json
-from ..utils.redis_pool import get_redis
+from ...utils.redis_pool import get_redis
 from starlette.responses import Response
 
 router = APIRouter(prefix="/stream", tags=["stream"])

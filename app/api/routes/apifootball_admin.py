@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ..utils.redis_pool import get_redis
+from ...utils.redis_pool import get_redis
 import time, json
 
 router = APIRouter(prefix="/admin/apifootball", tags=["admin.apifootball"])

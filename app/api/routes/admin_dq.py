@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from sqlalchemy import text
 from ..deps import SessionLocal
-from ..utils.dq import run_daily_suite
+from ...utils.dq import run_daily_suite
 import asyncio
 
 router = APIRouter(prefix="/admin/dq", tags=["admin.dq"])

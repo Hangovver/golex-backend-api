@@ -6,7 +6,7 @@ Features: Player details, Stats, Cache (5min TTL), PostgreSQL integration
 from fastapi import APIRouter
 from sqlalchemy import text
 from ..deps import SessionLocal
-from ..utils.cache import cache_get, cache_set
+from ...utils.cache import cache_get, cache_set
 from ..schemas.detail import PlayerDTO
 
 router = APIRouter(prefix="/players", tags=["players"])

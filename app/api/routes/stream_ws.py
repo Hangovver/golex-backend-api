@@ -1,6 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 import json, asyncio
-from ..utils.redis_pool import get_redis
+from ...utils.redis_pool import get_redis
 
 router = APIRouter(prefix="/stream", tags=["stream"])
 

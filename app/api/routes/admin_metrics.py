@@ -8,7 +8,7 @@ from ..deps import SessionLocal
 from sqlalchemy import text
 from ..services.ml_bridge import predict_with_model
 from ..ai.training.dataset_builder import build_dataset
-from ..utils.metrics import brier_score, log_loss, ece
+from ...utils.metrics import brier_score, log_loss, ece
 
 router = APIRouter(prefix="/admin/metrics", tags=["admin.metrics"])
 

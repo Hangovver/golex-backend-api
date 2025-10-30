@@ -4,7 +4,7 @@ Source: LeagueCenterController.java
 Features: League context (standings, fixtures, top scorers), Mock data with random seed, ETag caching
 """
 from fastapi import APIRouter, Request
-from ..utils.etag import etag_json
+from ...utils.etag import etag_json
 from typing import List, Dict
 import random, time
 

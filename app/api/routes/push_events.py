@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from ..utils.redis_pool import get_redis
+from ...utils.redis_pool import get_redis
 import json
 
 router = APIRouter(prefix="/admin/push", tags=["admin.push"])

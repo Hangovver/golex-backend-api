@@ -4,7 +4,7 @@ Source: PlayerStatsController.java
 Features: Player xG trend, Shots on target, ETag caching, Random seed for demo
 """
 from fastapi import APIRouter, Request
-from ..utils.etag import etag_json
+from ...utils.etag import etag_json
 import random
 
 router = APIRouter(prefix="/players", tags=["players.stats"])
