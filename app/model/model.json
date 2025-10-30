@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "created_at": "2025-10-26T00:00:00Z",
+  "algo": "demo-linear",
+  "weights": [
+    0.12,
+    0.05,
+    -0.03,
+    0.08,
+    0.01,
+    -0.02,
+    0.07,
+    -0.04
+  ],
+  "calibration": {
+    "method": "platt",
+    "params": {
+      "a": 1.0,
+      "b": 0.0
+    }
+  }
+}

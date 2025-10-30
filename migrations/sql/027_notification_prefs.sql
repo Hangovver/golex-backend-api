@@ -1,0 +1,9 @@
+-- 027_notification_prefs.sql
+CREATE TABLE IF NOT EXISTS user_notification_prefs (
+  device_id TEXT PRIMARY KEY,
+  kickoff BOOLEAN NOT NULL DEFAULT TRUE,
+  goals BOOLEAN NOT NULL DEFAULT TRUE,
+  final BOOLEAN NOT NULL DEFAULT TRUE,
+  predictions BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

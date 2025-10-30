@@ -1,0 +1,131 @@
+# GOLEX Backend API - Docker Compose
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: golex-postgres
+    environment:
+      POSTGRES_USER: golex
+      POSTGRES_PASSWORD: golex_password
+      POSTGRES_DB: golex
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U golex"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - golex-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: golex-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - golex-network
+
+  # FastAPI Backend
+  backend:
+    build: .
+    container_name: golex-backend
+    environment:
+      DATABASE_URL: postgresql://golex:golex_password@postgres:5432/golex
+      REDIS_URL: redis://redis:6379/0
+      API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+      SECRET_KEY: ${SECRET_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+    networks:
+      - golex-network
+    restart: unless-stopped
+
+  # Celery Worker
+  celery-worker:
+    build: .
+    container_name: golex-celery-worker
+    command: celery -A app.celery_app worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://golex:golex_password@postgres:5432/golex
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+    depends_on:
+      - postgres
+      - redis
+      - backend
+    volumes:
+      - ./app:/app/app
+    networks:
+      - golex-network
+    restart: unless-stopped
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build: .
+    container_name: golex-celery-beat
+    command: celery -A app.celery_app beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://golex:golex_password@postgres:5432/golex
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+    depends_on:
+      - postgres
+      - redis
+      - backend
+    volumes:
+      - ./app:/app/app
+    networks:
+      - golex-network
+    restart: unless-stopped
+
+  # Flower (Celery Monitoring)
+  flower:
+    build: .
+    container_name: golex-flower
+    command: celery -A app.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      - redis
+      - celery-worker
+    networks:
+      - golex-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  golex-network:
+    driver: bridge
+

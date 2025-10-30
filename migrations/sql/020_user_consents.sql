@@ -1,0 +1,2 @@
+-- 020_user_consents.sql
+CREATE TABLE IF NOT EXISTS user_consents (user_id UUID PRIMARY KEY, push BOOLEAN DEFAULT TRUE, analytics BOOLEAN DEFAULT TRUE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW());

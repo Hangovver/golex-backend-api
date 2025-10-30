@@ -1,0 +1,60 @@
+# GOLEX Backend API Dependencies
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Redis
+redis==5.0.1
+hiredis==2.2.3
+
+# HTTP Client
+httpx==0.25.1
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Task Queue
+celery==5.3.4
+flower==2.0.1
+
+# Data Processing
+numpy==1.26.2
+pandas==2.1.3
+
+# Machine Learning - PROFESSIONAL BETTING SYNDICATE GRADE
+lightgbm==4.1.0
+xgboost==2.0.3
+scikit-learn==1.3.2
+tensorflow==2.15.0
+keras==2.15.0
+
+# RSS Feed Parsing
+feedparser==6.0.10
+
+# Utilities
+python-dotenv==1.0.0
+python-dateutil==2.8.2
+
+# Monitoring & Logging
+sentry-sdk==1.38.0
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx-test==0.0.1
+
+# Development
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1

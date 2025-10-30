@@ -1,0 +1,9 @@
+{
+  "model_id": "golex-demo",
+  "version": "1.0.0",
+  "bundle_etag": "demo-001",
+  "min_required": "1.0.0",
+  "updated_at": "2025-10-26T00:00:00Z",
+  "notes": "Initial demo model",
+  "etag": "91e95be6"
+}
