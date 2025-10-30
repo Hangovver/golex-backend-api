@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from sqlalchemy import text
 from ..deps import SessionLocal
 from ...utils.cache import cache_get, cache_set
-from ..schemas.detail import PlayerDTO
+from ...schemas.detail import PlayerDTO
 
 router = APIRouter(prefix="/players", tags=["players"])
 

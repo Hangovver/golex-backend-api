@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from ..deps import SessionLocal
 from ..ai.features.feature_pool import list_features, TARGETS
 from ..services.feature_service import compute_basic_features
-from ..schemas.ai import FeatureInfo, FeaturesResponse, TargetsInfo
+from ...schemas.ai import FeatureInfo, FeaturesResponse, TargetsInfo
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
