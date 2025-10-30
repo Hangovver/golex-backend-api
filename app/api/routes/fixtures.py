@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from typing import Optional
 from fastapi import Request, Response
-from ..utils.etag import with_http_caching
+from ...utils.etag import with_http_caching
 from datetime import datetime, timezone
 
 router = APIRouter(prefix="/fixtures", tags=["fixtures"])
