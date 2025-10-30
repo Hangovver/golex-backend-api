@@ -29,8 +29,8 @@ def get_json(path: str, params: dict | None = None):
         raise RuntimeError("PROXY_BASE_URL not set")
     url = f"{BASE}{path}"
     q = dict(params or {})
-        if QUERY_TOKEN_VAL:
-            q[QUERY_TOKEN_KEY] = QUERY_TOKEN_VAL
-        r = requests.get(url, params=q, headers=_headers(), timeout=TIMEOUT)
+    if QUERY_TOKEN_VAL:
+        q[QUERY_TOKEN_KEY] = QUERY_TOKEN_VAL
+    r = requests.get(url, params=q, headers=_headers(), timeout=TIMEOUT)
     r.raise_for_status()
     return r.json()
