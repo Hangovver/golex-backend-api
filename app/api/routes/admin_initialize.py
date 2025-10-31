@@ -110,6 +110,13 @@ async def initialize_system(
             
             try:
                 # Try Celery first (if Redis available)
+                # Check if Redis URL is available
+                import os
+                redis_url = os.getenv('REDIS_URL') or os.getenv('CELERY_BROKER_URL')
+                if not redis_url:
+                    raise Exception("Redis URL not found in environment variables")
+                
+                print(f"[Initialize] Redis URL found: {redis_url[:50]}...")
                 task = initialize_professional_system_task.delay()
                 results["initialize"] = {
                     "status": "started",

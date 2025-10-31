@@ -21,8 +21,25 @@ from app.services.neural_network_model import NeuralNetworkPredictor
 
 # Celery app
 # Use environment variable if available, otherwise use settings
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL') or os.getenv('REDIS_URL') or settings.celery_broker_url
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND') or os.getenv('REDIS_URL') or settings.celery_result_backend
+# IMPORTANT: Read directly from os.getenv() first, then fallback to settings
+# This ensures Railway environment variables are loaded correctly
+CELERY_BROKER_URL = (
+    os.getenv('CELERY_BROKER_URL') or 
+    os.getenv('REDIS_URL') or 
+    os.getenv('REDIS_URL') or  # Fallback to REDIS_URL again
+    settings.celery_broker_url if hasattr(settings, 'celery_broker_url') else 'redis://localhost:6379/0'
+)
+CELERY_RESULT_BACKEND = (
+    os.getenv('CELERY_RESULT_BACKEND') or 
+    os.getenv('REDIS_URL') or 
+    settings.celery_result_backend if hasattr(settings, 'celery_result_backend') else 'redis://localhost:6379/0'
+)
+
+# Debug: Print Redis URL (will be removed in production)
+import logging
+logger = logging.getLogger(__name__)
+logger.info(f"[Celery] BROKER_URL: {CELERY_BROKER_URL[:50]}...")
+logger.info(f"[Celery] RESULT_BACKEND: {CELERY_RESULT_BACKEND[:50]}...")
 
 celery_app = Celery(
     'professional_tasks',
