@@ -14,6 +14,9 @@ import os
 from app.db.session import get_db
 from app.security.rbac import require_role
 from app.tasks.professional_tasks import initialize_professional_system_task
+from app.services.data_ingestion_service import DataIngestionService
+from app.services.elo_calculator import ELOCalculator
+import asyncio
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -100,23 +103,83 @@ async def initialize_system(
             results["migration"] = migration_result
             print(f"[Initialize] Migration: {migration_result['status']} - {migration_result['tables_created']}/{migration_result['total_tables']} tables")
         
-        # Step 2: Initialize (background task)
+        # Step 2: Initialize (background task or direct)
         if run_initialize:
             print("[Initialize] Step 2/2: Starting system initialize...")
             print("[Initialize] ⚠️  Bu işlem 2-4 saat sürebilir!")
             
-            # Run Celery task
-            task = initialize_professional_system_task.delay()
-            
-            results["initialize"] = {
-                "status": "started",
-                "task_id": task.id,
-                "message": "Initialize task başlatıldı. İlerlemeyi görmek için Celery worker loglarını kontrol et.",
-                "estimated_time": "2-4 hours"
-            }
-            
-            print(f"[Initialize] Task ID: {task.id}")
-            print("[Initialize] İlerleme için Celery worker loglarını takip et")
+            try:
+                # Try Celery first (if Redis available)
+                task = initialize_professional_system_task.delay()
+                results["initialize"] = {
+                    "status": "started",
+                    "task_id": task.id,
+                    "method": "celery",
+                    "message": "Initialize task Celery ile başlatıldı. İlerlemeyi görmek için Celery worker loglarını kontrol et.",
+                    "estimated_time": "2-4 hours"
+                }
+                print(f"[Initialize] Task ID: {task.id}")
+            except Exception as celery_error:
+                # Fallback: Run directly without Celery (if Redis not available)
+                print(f"[Initialize] Celery hatası (Redis yok?): {celery_error}")
+                print("[Initialize] Redis olmadan direkt çalıştırılıyor...")
+                
+                # Start background task (direct Python, no Celery)
+                def run_initialize_direct():
+                    try:
+                        from app.tasks.professional_tasks import (
+                            ingest_historical_data_task,
+                            recalculate_all_elos_task,
+                            collect_referee_stats_task,
+                            train_all_models_task
+                        )
+                        from sqlalchemy.orm import Session
+                        from app.db.session import SessionLocal
+                        
+                        db = SessionLocal()
+                        
+                        try:
+                            # Step 1: Ingest data
+                            print("[Init] Step 1/4: Ingesting historical data...")
+                            ingest_result = ingest_historical_data_task.apply(
+                                args=([39, 140, 135, 78, 61], ['2022', '2023', '2024'], 5000)
+                            ).get()
+                            
+                            # Step 2: Calculate ELO
+                            print("[Init] Step 2/4: Calculating ELO ratings...")
+                            elo_result = recalculate_all_elos_task.apply().get()
+                            
+                            # Step 3: Collect referee stats
+                            print("[Init] Step 3/4: Collecting referee stats...")
+                            referee_result = collect_referee_stats_task.apply(args=(730,)).get()
+                            
+                            # Step 4: Train models
+                            print("[Init] Step 4/4: Training ML models...")
+                            train_result = train_all_models_task.apply(args=(5000, 500)).get()
+                            
+                            print("[Init] ✅ Professional Betting System fully initialized!")
+                            
+                        finally:
+                            db.close()
+                            
+                    except Exception as e:
+                        print(f"[Init] ❌ Initialize hatası: {e}")
+                        import traceback
+                        traceback.print_exc()
+                
+                # Run in background thread (don't wait)
+                import threading
+                thread = threading.Thread(target=run_initialize_direct, daemon=True)
+                thread.start()
+                
+                results["initialize"] = {
+                    "status": "started",
+                    "method": "direct",
+                    "message": "Initialize direkt başlatıldı (Redis yok, Celery kullanılmadı). İlerleme loglarda görünecek.",
+                    "estimated_time": "2-4 hours",
+                    "note": "Redis olmadan çalışıyor - arka planda thread olarak çalışıyor"
+                }
+                print("[Initialize] Background thread başlatıldı")
         
         results["status"] = "success"
         
