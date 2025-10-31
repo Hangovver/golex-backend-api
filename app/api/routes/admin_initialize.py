@@ -13,7 +13,6 @@ import os
 
 from app.db.session import get_db
 from app.security.rbac import require_role
-from app.tasks.professional_tasks import celery_app, initialize_professional_system_task
 from app.tasks.professional_tasks import initialize_professional_system_task
 
 router = APIRouter(prefix="/admin", tags=["admin"])
