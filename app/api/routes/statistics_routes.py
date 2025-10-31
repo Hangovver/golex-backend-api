@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.services.statistics_service import StatisticsService
 
 router = APIRouter(tags=["Statistics"])

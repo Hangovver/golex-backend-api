@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.models.lineup import Lineup, LineupPlayer
 from app.schemas.lineup import LineupResponse, LineupPlayerSchema
 

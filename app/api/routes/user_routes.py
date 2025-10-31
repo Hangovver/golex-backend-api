@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
 from app.core.security import (

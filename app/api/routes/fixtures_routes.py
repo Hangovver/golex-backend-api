@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.services.api_football_service import api_football_service
 
 router = APIRouter(tags=["Fixtures"])

@@ -9,7 +9,7 @@ import asyncio
 import json
 from typing import AsyncGenerator
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.services.api_football_service import api_football_service
 
 router = APIRouter(tags=["Real-time"])

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.services.api_football_service import api_football_service
 
 router = APIRouter(tags=["Search"])

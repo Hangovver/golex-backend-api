@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.db.database import get_db
+from app.db.session import get_db
 from app.models.user import User, Favorite
 from app.schemas.user import FavoriteCreate, FavoriteResponse, FavoriteUpdate
 from app.api.routes.user_routes import get_current_user
