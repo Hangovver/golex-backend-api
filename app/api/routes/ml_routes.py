@@ -18,7 +18,7 @@ from datetime import datetime
 from app.db.session import get_db
 from app.services.lightgbm_model import LightGBMPredictor
 from app.services.ml_training_service import MLTrainingService, train_model_task, celery_app
-from app.core.security import require_admin
+from app.security.rbac import require_role
 
 router = APIRouter(prefix="/api/ml", tags=["Machine Learning"])
 
@@ -128,7 +128,7 @@ async def predict_batch_ml(
 # MODEL MANAGEMENT ENDPOINTS (Admin Only)
 # ============================================================================
 
-@router.post("/train", dependencies=[Depends(require_admin)])
+@router.post("/train", dependencies=[Depends(require_role('admin'))])
 async def train_model(
     background_tasks: BackgroundTasks,
     min_matches: int = 5000,
@@ -182,7 +182,7 @@ async def train_model(
         }
 
 
-@router.get("/training/status/{task_id}", dependencies=[Depends(require_admin)])
+@router.get("/training/status/{task_id}", dependencies=[Depends(require_role('admin'))])
 async def get_training_status(task_id: str):
     """
     Check status of async training task
