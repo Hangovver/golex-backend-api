@@ -20,19 +20,20 @@ from app.services.neural_network_model import NeuralNetworkPredictor
 
 
 # Celery app
-# Use environment variable if available, otherwise use settings
-# IMPORTANT: Read directly from os.getenv() first, then fallback to settings
-# This ensures Railway environment variables are loaded correctly
+# IMPORTANT: Use settings first (pydantic-settings loads env vars automatically)
+# Fallback to os.getenv() only if settings doesn't have the value
+# This ensures Railway environment variables are loaded correctly via settings
 CELERY_BROKER_URL = (
+    settings.celery_broker_url if settings.celery_broker_url != "redis://localhost:6379/0" else
     os.getenv('CELERY_BROKER_URL') or 
     os.getenv('REDIS_URL') or 
-    os.getenv('REDIS_URL') or  # Fallback to REDIS_URL again
-    settings.celery_broker_url if hasattr(settings, 'celery_broker_url') else 'redis://localhost:6379/0'
+    'redis://localhost:6379/0'
 )
 CELERY_RESULT_BACKEND = (
+    settings.celery_result_backend if settings.celery_result_backend != "redis://localhost:6379/0" else
     os.getenv('CELERY_RESULT_BACKEND') or 
     os.getenv('REDIS_URL') or 
-    settings.celery_result_backend if hasattr(settings, 'celery_result_backend') else 'redis://localhost:6379/0'
+    'redis://localhost:6379/0'
 )
 
 # Debug: Print Redis URL (will be removed in production)

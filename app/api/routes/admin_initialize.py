@@ -16,6 +16,7 @@ from app.security.rbac import require_role
 from app.tasks.professional_tasks import initialize_professional_system_task
 from app.services.data_ingestion_service import DataIngestionService
 from app.services.elo_calculator import ELOCalculator
+from app.core.config import settings
 import asyncio
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -110,11 +111,10 @@ async def initialize_system(
             
             try:
                 # Try Celery first (if Redis available)
-                # Check if Redis URL is available
-                import os
-                redis_url = os.getenv('REDIS_URL') or os.getenv('CELERY_BROKER_URL')
-                if not redis_url:
-                    raise Exception("Redis URL not found in environment variables")
+                # Check if Redis URL is available (use settings, not os.getenv)
+                redis_url = settings.celery_broker_url or settings.REDIS_URL
+                if not redis_url or redis_url == "redis://localhost:6379/0":
+                    raise Exception("Redis URL not found in environment variables or still using default localhost")
                 
                 print(f"[Initialize] Redis URL found: {redis_url[:50]}...")
                 task = initialize_professional_system_task.delay()
