@@ -103,6 +103,10 @@ app.include_router(ml_routes.router, prefix="/api/v1")  # ML Model & Training
 from app.api.routes import notifications_routes
 app.include_router(notifications_routes.router, prefix="/api/v1")
 
+# Import and include admin initialize router
+from app.api.routes import admin_initialize
+app.include_router(admin_initialize.router, prefix="/api/v1")  # Auto Migration + Initialize
+
 @app.get("/")
 async def root():
     return {
