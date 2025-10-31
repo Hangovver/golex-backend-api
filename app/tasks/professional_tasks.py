@@ -21,8 +21,8 @@ from app.services.neural_network_model import NeuralNetworkPredictor
 
 # Celery app
 # Use environment variable if available, otherwise use settings
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL') or os.getenv('REDIS_URL') or settings.CELERY_BROKER_URL
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND') or os.getenv('REDIS_URL') or settings.CELERY_RESULT_BACKEND
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL') or os.getenv('REDIS_URL') or settings.celery_broker_url
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND') or os.getenv('REDIS_URL') or settings.celery_result_backend
 
 celery_app = Celery(
     'professional_tasks',
