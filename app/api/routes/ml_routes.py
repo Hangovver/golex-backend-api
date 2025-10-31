@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 
-from app.core.database import get_db
+from app.db.session import get_db
 from app.services.lightgbm_model import LightGBMPredictor
 from app.services.ml_training_service import MLTrainingService, train_model_task, celery_app
 from app.core.security import require_admin

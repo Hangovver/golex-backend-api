@@ -8,7 +8,7 @@ from app.celery_app import celery_app
 from app.services.api_football_service import api_football_service
 from app.services.attack_momentum import calculate_attack_momentum
 from app.services.player_rating import calculate_player_rating
-from app.db.database import SessionLocal
+from app.db.session import SessionLocal
 from app.models.player_statistics import PlayerStatistics, TeamStatistics
 import logging
 
