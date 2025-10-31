@@ -7,6 +7,7 @@ Features:
 - Model info and metrics
 - Feature importance
 - Training status check
+Railway deploy: 2025-10-31
 """
 
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
