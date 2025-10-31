@@ -1,7 +1,7 @@
 import asyncio, json, time, datetime as dt
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from ..deps import SessionLocal
+from ..db.session import SessionLocal
 from ..services.apifootball import ApiFootball
 from ..etl.raw import save_raw
 from ..etl.staging import stage_fixtures, stage_events, stage_lineups, stage_standings

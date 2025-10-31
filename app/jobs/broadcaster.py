@@ -1,7 +1,7 @@
 import asyncio, json, time
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from ..deps import SessionLocal
+from ..db.session import SessionLocal
 from ..utils.redis_pool import get_redis
 
 async def _fixture_channels(db: Session, fixture_ext: str):
