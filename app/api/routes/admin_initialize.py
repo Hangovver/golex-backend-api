@@ -18,7 +18,7 @@ from app.tasks.professional_tasks import initialize_professional_system_task
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def run_migration(db: Session) -> Dict:
+def run_migration_func(db: Session) -> Dict:
     """Run database migration from SQL file"""
     migration_file = Path(__file__).parent.parent.parent / "db" / "migrations" / "002_professional_betting_system.sql"
     
@@ -96,7 +96,7 @@ async def initialize_system(
         # Step 1: Migration
         if run_migration:
             print("[Initialize] Step 1/2: Running database migration...")
-            migration_result = run_migration(db)
+            migration_result = run_migration_func(db)
             results["migration"] = migration_result
             print(f"[Initialize] Migration: {migration_result['status']} - {migration_result['tables_created']}/{migration_result['total_tables']} tables")
         
