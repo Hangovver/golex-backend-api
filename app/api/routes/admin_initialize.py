@@ -112,9 +112,16 @@ async def initialize_system(
             try:
                 # Try Celery first (if Redis available)
                 # Check if Redis URL is available (use settings, not os.getenv)
+                # DEBUG: Print all Redis-related settings
+                print(f"[Initialize] DEBUG - CELERY_BROKER_URL: {settings.CELERY_BROKER_URL}")
+                print(f"[Initialize] DEBUG - REDIS_URL: {settings.REDIS_URL[:50] if settings.REDIS_URL else 'None'}...")
+                print(f"[Initialize] DEBUG - celery_broker_url property: {settings.celery_broker_url[:50] if settings.celery_broker_url else 'None'}...")
+                
                 redis_url = settings.celery_broker_url or settings.REDIS_URL
+                print(f"[Initialize] DEBUG - Final redis_url: {redis_url[:50] if redis_url else 'None'}...")
+                
                 if not redis_url or redis_url == "redis://localhost:6379/0":
-                    raise Exception("Redis URL not found in environment variables or still using default localhost")
+                    raise Exception(f"Redis URL not found in environment variables. CELERY_BROKER_URL={settings.CELERY_BROKER_URL}, REDIS_URL={settings.REDIS_URL}")
                 
                 print(f"[Initialize] Redis URL found: {redis_url[:50]}...")
                 task = initialize_professional_system_task.delay()
