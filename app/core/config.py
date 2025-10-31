@@ -50,9 +50,17 @@ class Settings(BaseSettings):
     WS_MAX_CONNECTIONS: int = 1000
     WS_HEARTBEAT_INTERVAL: int = 30
     
-    # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+    # Celery - Use REDIS_URL if CELERY_BROKER_URL not set
+    CELERY_BROKER_URL: Optional[str] = None
+    CELERY_RESULT_BACKEND: Optional[str] = None
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # If CELERY_BROKER_URL not set, use REDIS_URL
+        if not self.CELERY_BROKER_URL:
+            self.CELERY_BROKER_URL = self.REDIS_URL
+        if not self.CELERY_RESULT_BACKEND:
+            self.CELERY_RESULT_BACKEND = self.REDIS_URL
     
     # AWS (for production)
     AWS_REGION: Optional[str] = None
