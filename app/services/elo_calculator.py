@@ -5,7 +5,7 @@ Calculates and updates team ELO ratings after each match
 NO SIMPLIFICATION - Production-ready ELO implementation
 """
 
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime
