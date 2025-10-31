@@ -1,6 +1,7 @@
 """
 GOLEX Backend API - Main Application
 Extended with football features (attack momentum, player ratings, xG)
+Deploy trigger: 2025-10-31
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
