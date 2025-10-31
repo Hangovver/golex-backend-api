@@ -54,13 +54,15 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: Optional[str] = None
     CELERY_RESULT_BACKEND: Optional[str] = None
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # If CELERY_BROKER_URL not set, use REDIS_URL
-        if not self.CELERY_BROKER_URL:
-            self.CELERY_BROKER_URL = self.REDIS_URL
-        if not self.CELERY_RESULT_BACKEND:
-            self.CELERY_RESULT_BACKEND = self.REDIS_URL
+    @property
+    def celery_broker_url(self) -> str:
+        """Get Celery broker URL, fallback to REDIS_URL"""
+        return self.CELERY_BROKER_URL or self.REDIS_URL
+    
+    @property
+    def celery_result_backend(self) -> str:
+        """Get Celery result backend, fallback to REDIS_URL"""
+        return self.CELERY_RESULT_BACKEND or self.REDIS_URL
     
     # AWS (for production)
     AWS_REGION: Optional[str] = None
