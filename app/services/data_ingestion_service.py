@@ -182,6 +182,12 @@ class DataIngestionService:
             if existing:
                 return False  # Skip existing
             
+            # Insert or update league (CRITICAL: must be before fixture insert)
+            league_id = await self._upsert_league(league_info)
+            if not league_id:
+                print(f"[DataIngestion] Failed to upsert league {league_info.get('id')}, skipping fixture")
+                return False
+            
             # Insert or update teams
             home_team_id = await self._upsert_team(teams_info['home'])
             away_team_id = await self._upsert_team(teams_info['away'])
@@ -204,7 +210,7 @@ class DataIngestionService:
                 )
             """), {
                 "api_id": fixture_info['id'],
-                "league_id": league_info['id'],
+                "league_id": league_id,
                 "season": league_info['season'],
                 "date": datetime.fromtimestamp(fixture_info['timestamp']),
                 "home_id": home_team_id,
@@ -224,6 +230,63 @@ class DataIngestionService:
             self.db.rollback()
             print(f"[DataIngestion] Error processing fixture: {e}")
             return False
+    
+    async def _upsert_league(self, league_data: Dict) -> Optional[int]:
+        """Insert or update league"""
+        try:
+            api_id = league_data.get('id')
+            if not api_id:
+                return None
+            
+            # Check existing by api_football_id
+            existing = self.db.execute(text("""
+                SELECT id FROM leagues WHERE api_football_id = :api_id
+            """), {"api_id": api_id}).fetchone()
+            
+            if existing:
+                return existing[0]
+            
+            # Also check if id matches api_football_id (some schemas use id directly)
+            existing_by_id = self.db.execute(text("""
+                SELECT id FROM leagues WHERE id = :api_id
+            """), {"api_id": api_id}).fetchone()
+            
+            if existing_by_id:
+                return existing_by_id[0]
+            
+            # Insert new - try with api_football_id first
+            try:
+                result = self.db.execute(text("""
+                    INSERT INTO leagues (api_football_id, name, country, current_season_year)
+                    VALUES (:api_id, :name, :country, :season)
+                    RETURNING id
+                """), {
+                    "api_id": api_id,
+                    "name": league_data.get('name', 'Unknown'),
+                    "country": league_data.get('country', {}).get('name') if isinstance(league_data.get('country'), dict) else league_data.get('country'),
+                    "season": league_data.get('season')
+                })
+                self.db.commit()
+                return result.fetchone()[0]
+            except Exception as e:
+                # If api_football_id column doesn't exist, try using id directly
+                self.db.rollback()
+                result = self.db.execute(text("""
+                    INSERT INTO leagues (id, name, country)
+                    VALUES (:api_id, :name, :country)
+                    RETURNING id
+                """), {
+                    "api_id": api_id,
+                    "name": league_data.get('name', 'Unknown'),
+                    "country": league_data.get('country', {}).get('name') if isinstance(league_data.get('country'), dict) else league_data.get('country')
+                })
+                self.db.commit()
+                return result.fetchone()[0]
+            
+        except Exception as e:
+            self.db.rollback()
+            print(f"[DataIngestion] Error upserting league: {e}")
+            return None
     
     async def _upsert_team(self, team_data: Dict) -> int:
         """Insert or update team"""
