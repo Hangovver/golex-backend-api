@@ -65,14 +65,11 @@ def run_migration_func(db: Session) -> Dict:
                 END IF;
             END $$;
             """,
-            # Fixtures table - missing columns
+            # Fixtures table - missing columns (match_date already exists, just add others)
             """
             DO $$ 
             BEGIN
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                               WHERE table_name='fixtures' AND column_name='date') THEN
-                    ALTER TABLE fixtures ADD COLUMN date TIMESTAMP;
-                END IF;
+                -- match_date already exists, don't add it
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                                WHERE table_name='fixtures' AND column_name='season') THEN
                     ALTER TABLE fixtures ADD COLUMN season INTEGER;
@@ -84,6 +81,10 @@ def run_migration_func(db: Session) -> Dict:
                 IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                                WHERE table_name='fixtures' AND column_name='round') THEN
                     ALTER TABLE fixtures ADD COLUMN round VARCHAR(100);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name='fixtures' AND column_name='api_football_id') THEN
+                    ALTER TABLE fixtures ADD COLUMN api_football_id INTEGER;
                 END IF;
             END $$;
             """

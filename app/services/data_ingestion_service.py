@@ -194,7 +194,7 @@ class DataIngestionService:
             # Insert fixture
             self.db.execute(text("""
                 INSERT INTO fixtures (
-                    api_football_id, league_id, season, date,
+                    api_football_id, league_id, season, match_date,
                     home_team_id, away_team_id, home_score, away_score,
                     status, referee_id, venue, round
                 ) VALUES (
@@ -389,4 +389,5 @@ class DataIngestionService:
         })
         
         self.db.commit()
+
 
