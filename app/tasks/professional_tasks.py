@@ -20,27 +20,43 @@ from app.services.neural_network_model import NeuralNetworkPredictor
 
 
 # Celery app
-# IMPORTANT: Use settings first (pydantic-settings loads env vars automatically)
-# Fallback to os.getenv() only if settings doesn't have the value
-# This ensures Railway environment variables are loaded correctly via settings
+# IMPORTANT: Use os.environ directly (most reliable for Railway)
+# Fallback to settings if os.environ doesn't have the value
+# This ensures Railway environment variables are loaded correctly
+os_celery_broker = os.environ.get('CELERY_BROKER_URL')
+os_celery_backend = os.environ.get('CELERY_RESULT_BACKEND')
+os_redis_url = os.environ.get('REDIS_URL')
+
+# Debug: Print all Redis env vars
+import logging
+logger = logging.getLogger(__name__)
+all_redis_vars = {k: v for k, v in os.environ.items() if 'REDIS' in k.upper() or 'CELERY' in k.upper()}
+logger.info(f"[Celery] All Redis/Celery env vars: {list(all_redis_vars.keys())}")
+logger.info(f"[Celery] os.environ.get('CELERY_BROKER_URL'): {os_celery_broker[:50] if os_celery_broker else 'None'}...")
+logger.info(f"[Celery] os.environ.get('REDIS_URL'): {os_redis_url[:50] if os_redis_url else 'None'}...")
+logger.info(f"[Celery] settings.CELERY_BROKER_URL: {settings.CELERY_BROKER_URL}")
+logger.info(f"[Celery] settings.REDIS_URL: {settings.REDIS_URL[:50] if settings.REDIS_URL else 'None'}...")
+
+# Try os.environ first (most reliable), then settings
 CELERY_BROKER_URL = (
-    settings.celery_broker_url if settings.celery_broker_url != "redis://localhost:6379/0" else
-    os.getenv('CELERY_BROKER_URL') or 
-    os.getenv('REDIS_URL') or 
+    os_celery_broker or
+    os_celery_backend or
+    os_redis_url or
+    (settings.celery_broker_url if settings.celery_broker_url and settings.celery_broker_url != "redis://localhost:6379/0" else None) or
+    (settings.REDIS_URL if settings.REDIS_URL and settings.REDIS_URL != "redis://localhost:6379/0" else None) or
     'redis://localhost:6379/0'
 )
 CELERY_RESULT_BACKEND = (
-    settings.celery_result_backend if settings.celery_result_backend != "redis://localhost:6379/0" else
-    os.getenv('CELERY_RESULT_BACKEND') or 
-    os.getenv('REDIS_URL') or 
+    os_celery_backend or
+    os_celery_broker or
+    os_redis_url or
+    (settings.celery_result_backend if settings.celery_result_backend and settings.celery_result_backend != "redis://localhost:6379/0" else None) or
+    (settings.REDIS_URL if settings.REDIS_URL and settings.REDIS_URL != "redis://localhost:6379/0" else None) or
     'redis://localhost:6379/0'
 )
 
-# Debug: Print Redis URL (will be removed in production)
-import logging
-logger = logging.getLogger(__name__)
-logger.info(f"[Celery] BROKER_URL: {CELERY_BROKER_URL[:50]}...")
-logger.info(f"[Celery] RESULT_BACKEND: {CELERY_RESULT_BACKEND[:50]}...")
+logger.info(f"[Celery] Final BROKER_URL: {CELERY_BROKER_URL[:50]}...")
+logger.info(f"[Celery] Final RESULT_BACKEND: {CELERY_RESULT_BACKEND[:50]}...")
 
 celery_app = Celery(
     'professional_tasks',
