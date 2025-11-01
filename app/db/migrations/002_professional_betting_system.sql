@@ -67,14 +67,49 @@ CREATE INDEX idx_referee_stats_league ON referee_match_stats(league_id);
 COMMENT ON TABLE referee_match_stats IS 'Detailed referee statistics per match';
 
 
--- Add referee_id to fixtures table
+-- Add missing columns to fixtures table
 DO $$
 BEGIN
+    -- Add date column (used by data ingestion)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='fixtures' AND column_name='date') THEN
+        ALTER TABLE fixtures ADD COLUMN date TIMESTAMP;
+    END IF;
+    
+    -- Add season column (if not exists)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='fixtures' AND column_name='season') THEN
+        ALTER TABLE fixtures ADD COLUMN season INTEGER;
+    END IF;
+    
+    -- Add venue column (if not exists)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='fixtures' AND column_name='venue') THEN
+        ALTER TABLE fixtures ADD COLUMN venue VARCHAR(200);
+    END IF;
+    
+    -- Add round column (if not exists)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='fixtures' AND column_name='round') THEN
+        ALTER TABLE fixtures ADD COLUMN round VARCHAR(100);
+    END IF;
+    
+    -- Add referee_id column
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name='fixtures' AND column_name='referee_id') THEN
         ALTER TABLE fixtures ADD COLUMN referee_id INTEGER;
         ALTER TABLE fixtures ADD CONSTRAINT fk_fixtures_referee 
             FOREIGN KEY (referee_id) REFERENCES referees(id) ON DELETE SET NULL;
+    END IF;
+END$$;
+
+-- Add missing columns to teams table
+DO $$
+BEGIN
+    -- Add logo column (used by data ingestion)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='teams' AND column_name='logo') THEN
+        ALTER TABLE teams ADD COLUMN logo TEXT;
     END IF;
 END$$;
 
@@ -427,4 +462,5 @@ BEGIN
     RAISE NOTICE '⚡ Triggers Created: Feature cache auto-expiry';
     RAISE NOTICE '💾 Initial Data: Default ELO ratings seeded';
 END$$;
+
 
