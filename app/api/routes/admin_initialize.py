@@ -53,6 +53,54 @@ def run_migration_func(db: Session) -> Dict:
         raise HTTPException(status_code=404, detail=f"Migration dosyası bulunamadı: {migration_file}")
     
     try:
+        # First, manually add missing columns (critical fix)
+        missing_columns_sql = [
+            # Teams table - logo column
+            """
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name='teams' AND column_name='logo') THEN
+                    ALTER TABLE teams ADD COLUMN logo TEXT;
+                END IF;
+            END $$;
+            """,
+            # Fixtures table - missing columns
+            """
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name='fixtures' AND column_name='date') THEN
+                    ALTER TABLE fixtures ADD COLUMN date TIMESTAMP;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name='fixtures' AND column_name='season') THEN
+                    ALTER TABLE fixtures ADD COLUMN season INTEGER;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name='fixtures' AND column_name='venue') THEN
+                    ALTER TABLE fixtures ADD COLUMN venue VARCHAR(200);
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                               WHERE table_name='fixtures' AND column_name='round') THEN
+                    ALTER TABLE fixtures ADD COLUMN round VARCHAR(100);
+                END IF;
+            END $$;
+            """
+        ]
+        
+        # Execute missing columns first
+        for sql in missing_columns_sql:
+            try:
+                db.execute(text(sql))
+                db.commit()
+                print(f"[Migration] Added missing columns")
+            except Exception as e:
+                db.rollback()
+                if "already exists" not in str(e).lower() and "duplicate" not in str(e).lower():
+                    print(f"[Migration] Warning adding columns: {str(e)[:100]}")
+        
+        # Then run the full migration file
         with open(migration_file, 'r', encoding='utf-8') as f:
             sql_content = f.read()
         
@@ -133,20 +181,45 @@ async def initialize_system(
             print("[Initialize] ⚠️  Bu işlem 2-4 saat sürebilir!")
             
             try:
-                # Try Celery first (if Redis available)
-                # Check if Redis URL is available (use os.environ directly - most reliable)
-                # DEBUG: Print all Redis-related settings AND environment variables
-                os_celery_broker = os.environ.get('CELERY_BROKER_URL')
-                os_celery_backend = os.environ.get('CELERY_RESULT_BACKEND')
-                os_redis_url = os.environ.get('REDIS_URL')
+                # Try Celery first (if task queue available)
+                # Railway service reference variables are NOT loaded as environment variables
+                # Workaround: Use Railway internal network directly
+                redis_password = os.environ.get('REDIS_PASSWORD')
+                redis_host = os.environ.get('REDISHOST') or os.environ.get('REDIS_HOST') or 'redis.railway.internal'
+                redis_port = os.environ.get('REDISPORT') or os.environ.get('REDIS_PORT') or '6379'
+                redis_user = os.environ.get('REDISUSER') or os.environ.get('REDIS_USER') or 'default'
+                
+                # Build Redis URL from Railway internal network variables
+                railway_redis_url = None
+                if redis_password:
+                    railway_redis_url = f"redis://{redis_user}:{redis_password}@{redis_host}:{redis_port}"
+                
+                os_celery_broker = (
+                    os.environ.get('TASK_BROKER_URL') or 
+                    os.environ.get('CACHE_STORE_URL') or
+                    os.environ.get('CELERY_BROKER_URL') or
+                    railway_redis_url
+                )
+                os_celery_backend = (
+                    os.environ.get('TASK_RESULT_URL') or 
+                    os.environ.get('CACHE_STORE_URL') or
+                    os.environ.get('CELERY_RESULT_BACKEND') or
+                    railway_redis_url
+                )
+                os_redis_url = (
+                    os.environ.get('CACHE_STORE_URL') or
+                    os.environ.get('REDIS_URL') or
+                    railway_redis_url
+                )
                 
                 # Also check all environment variables (for debugging)
-                all_redis_vars = {k: v for k, v in os.environ.items() if 'REDIS' in k.upper() or 'CELERY' in k.upper()}
-                print(f"[Initialize] DEBUG - All Redis/Celery env vars: {list(all_redis_vars.keys())}")
-                
-                print(f"[Initialize] DEBUG - os.environ.get('CELERY_BROKER_URL'): {os_celery_broker[:50] if os_celery_broker else 'None'}...")
-                print(f"[Initialize] DEBUG - os.environ.get('CELERY_RESULT_BACKEND'): {os_celery_backend[:50] if os_celery_backend else 'None'}...")
-                print(f"[Initialize] DEBUG - os.environ.get('REDIS_URL'): {os_redis_url[:50] if os_redis_url else 'None'}...")
+                all_queue_vars = {k: v for k, v in os.environ.items() if 'TASK' in k.upper() or 'CACHE_STORE' in k.upper() or 'REDIS' in k.upper() or 'CELERY' in k.upper()}
+                print(f"[Initialize] DEBUG - All queue env vars: {list(all_queue_vars.keys())}")
+                print(f"[Initialize] DEBUG - Railway internal: REDIS_PASSWORD={bool(redis_password)}, REDISHOST={redis_host}, REDISPORT={redis_port}")
+                print(f"[Initialize] DEBUG - Built Railway URL: {railway_redis_url[:50] if railway_redis_url else 'None'}...")
+                print(f"[Initialize] DEBUG - Final broker URL: {os_celery_broker[:50] if os_celery_broker else 'None'}...")
+                print(f"[Initialize] DEBUG - Final result URL: {os_celery_backend[:50] if os_celery_backend else 'None'}...")
+                print(f"[Initialize] DEBUG - Legacy: CELERY_BROKER_URL={bool(os.environ.get('CELERY_BROKER_URL'))}, REDIS_URL={bool(os.environ.get('REDIS_URL'))}")
                 print(f"[Initialize] DEBUG - settings.CELERY_BROKER_URL: {settings.CELERY_BROKER_URL}")
                 print(f"[Initialize] DEBUG - settings.REDIS_URL: {settings.REDIS_URL[:50] if settings.REDIS_URL else 'None'}...")
                 print(f"[Initialize] DEBUG - settings.celery_broker_url property: {settings.celery_broker_url[:50] if settings.celery_broker_url else 'None'}...")
