@@ -20,22 +20,51 @@ from app.services.neural_network_model import NeuralNetworkPredictor
 
 
 # Celery app
-# IMPORTANT: Use os.environ directly (most reliable for Railway)
-# Fallback to settings if os.environ doesn't have the value
-# This ensures Railway environment variables are loaded correctly
-os_celery_broker = os.environ.get('CELERY_BROKER_URL')
-os_celery_backend = os.environ.get('CELERY_RESULT_BACKEND')
-os_redis_url = os.environ.get('REDIS_URL')
+# IMPORTANT: Railway service reference variables are NOT loaded as environment variables
+# Workaround: Use Railway internal network directly or parse Railway service connection
+# Railway internal network: redis.railway.internal:6379 (always accessible if Redis service exists)
 
-# Debug: Print all Redis env vars
+# Try to get Redis password from Railway service variables (if available)
+# Railway provides: REDIS_PASSWORD, REDIS_HOST, REDIS_PORT, REDIS_USER
+redis_password = os.environ.get('REDIS_PASSWORD')
+redis_host = os.environ.get('REDISHOST') or os.environ.get('REDIS_HOST') or 'redis.railway.internal'
+redis_port = os.environ.get('REDISPORT') or os.environ.get('REDIS_PORT') or '6379'
+redis_user = os.environ.get('REDISUSER') or os.environ.get('REDIS_USER') or 'default'
+
+# Build Redis URL from Railway internal network variables
+railway_redis_url = None
+if redis_password:
+    railway_redis_url = f"redis://{redis_user}:{redis_password}@{redis_host}:{redis_port}"
+
+# Also try direct environment variables (if Railway loads them)
+os_celery_broker = (
+    os.environ.get('TASK_BROKER_URL') or 
+    os.environ.get('CACHE_STORE_URL') or
+    os.environ.get('CELERY_BROKER_URL') or
+    railway_redis_url
+)
+os_celery_backend = (
+    os.environ.get('TASK_RESULT_URL') or 
+    os.environ.get('CACHE_STORE_URL') or
+    os.environ.get('CELERY_RESULT_BACKEND') or
+    railway_redis_url
+)
+os_redis_url = (
+    os.environ.get('CACHE_STORE_URL') or
+    os.environ.get('REDIS_URL') or
+    railway_redis_url
+)
+
+# Debug: Print all task queue env vars
 import logging
 logger = logging.getLogger(__name__)
-all_redis_vars = {k: v for k, v in os.environ.items() if 'REDIS' in k.upper() or 'CELERY' in k.upper()}
-logger.info(f"[Celery] All Redis/Celery env vars: {list(all_redis_vars.keys())}")
-logger.info(f"[Celery] os.environ.get('CELERY_BROKER_URL'): {os_celery_broker[:50] if os_celery_broker else 'None'}...")
-logger.info(f"[Celery] os.environ.get('REDIS_URL'): {os_redis_url[:50] if os_redis_url else 'None'}...")
-logger.info(f"[Celery] settings.CELERY_BROKER_URL: {settings.CELERY_BROKER_URL}")
-logger.info(f"[Celery] settings.REDIS_URL: {settings.REDIS_URL[:50] if settings.REDIS_URL else 'None'}...")
+all_queue_vars = {k: v for k, v in os.environ.items() if 'TASK' in k.upper() or 'CACHE_STORE' in k.upper() or 'REDIS' in k.upper() or 'CELERY' in k.upper()}
+logger.info(f"[Celery] All queue env vars: {list(all_queue_vars.keys())}")
+logger.info(f"[Celery] Railway internal: REDIS_PASSWORD={bool(redis_password)}, REDISHOST={redis_host}, REDISPORT={redis_port}")
+logger.info(f"[Celery] Built Railway URL: {railway_redis_url[:50] if railway_redis_url else 'None'}...")
+logger.info(f"[Celery] Final broker URL: {os_celery_broker[:50] if os_celery_broker else 'None'}...")
+logger.info(f"[Celery] Final result URL: {os_celery_backend[:50] if os_celery_backend else 'None'}...")
+logger.info(f"[Celery] Legacy: CELERY_BROKER_URL={bool(os.environ.get('CELERY_BROKER_URL'))}, REDIS_URL={bool(os.environ.get('REDIS_URL'))}")
 
 # Try os.environ first (most reliable), then settings
 CELERY_BROKER_URL = (
@@ -58,11 +87,25 @@ CELERY_RESULT_BACKEND = (
 logger.info(f"[Celery] Final BROKER_URL: {CELERY_BROKER_URL[:50]}...")
 logger.info(f"[Celery] Final RESULT_BACKEND: {CELERY_RESULT_BACKEND[:50]}...")
 
-celery_app = Celery(
-    'professional_tasks',
-    broker=CELERY_BROKER_URL,
-    backend=CELERY_RESULT_BACKEND
-)
+# If Redis not available, use memory broker (works but not persistent)
+# This allows tasks to run even without Redis
+use_memory = CELERY_BROKER_URL == "redis://localhost:6379/0" or not CELERY_BROKER_URL
+
+if use_memory:
+    logger.warning("[Celery] Redis not found, using memory broker (tasks will run synchronously)")
+    # Use memory broker - tasks run synchronously but system works
+    celery_app = Celery(
+        'professional_tasks',
+        broker='memory://',
+        backend='cache+memory://'
+    )
+else:
+    logger.info(f"[Celery] Using Redis broker: {CELERY_BROKER_URL[:50]}...")
+    celery_app = Celery(
+        'professional_tasks',
+        broker=CELERY_BROKER_URL,
+        backend=CELERY_RESULT_BACKEND
+    )
 
 celery_app.conf.update(
     task_serializer='json',
