@@ -21,6 +21,29 @@ import asyncio
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+@router.get("/debug/env")
+async def debug_env():
+    """DEBUG: Tüm Redis environment variable'larını göster"""
+    import os
+    env_vars = {
+        "os.getenv('CELERY_BROKER_URL')": os.getenv('CELERY_BROKER_URL'),
+        "os.getenv('CELERY_RESULT_BACKEND')": os.getenv('CELERY_RESULT_BACKEND'),
+        "os.getenv('REDIS_URL')": os.getenv('REDIS_URL'),
+        "settings.CELERY_BROKER_URL": settings.CELERY_BROKER_URL,
+        "settings.CELERY_RESULT_BACKEND": settings.CELERY_RESULT_BACKEND,
+        "settings.REDIS_URL": settings.REDIS_URL,
+        "settings.celery_broker_url": settings.celery_broker_url,
+        "settings.celery_result_backend": settings.celery_result_backend,
+    }
+    # Tüm environment variable'ları listele (Redis ile ilgili olanlar)
+    all_env = {k: v for k, v in os.environ.items() if 'REDIS' in k.upper() or 'CELERY' in k.upper()}
+    
+    return {
+        "redis_vars": env_vars,
+        "all_redis_env": all_env,
+        "final_redis_url": os.getenv('CELERY_BROKER_URL') or os.getenv('CELERY_RESULT_BACKEND') or os.getenv('REDIS_URL') or settings.celery_broker_url or settings.REDIS_URL
+    }
+
 
 def run_migration_func(db: Session) -> Dict:
     """Run database migration from SQL file"""
@@ -111,25 +134,32 @@ async def initialize_system(
             
             try:
                 # Try Celery first (if Redis available)
-                # Check if Redis URL is available (try both settings and os.getenv)
+                # Check if Redis URL is available (use os.environ directly - most reliable)
                 # DEBUG: Print all Redis-related settings AND environment variables
-                import os
-                os_celery_broker = os.getenv('CELERY_BROKER_URL')
-                os_celery_backend = os.getenv('CELERY_RESULT_BACKEND')
-                os_redis_url = os.getenv('REDIS_URL')
+                os_celery_broker = os.environ.get('CELERY_BROKER_URL')
+                os_celery_backend = os.environ.get('CELERY_RESULT_BACKEND')
+                os_redis_url = os.environ.get('REDIS_URL')
                 
-                print(f"[Initialize] DEBUG - os.getenv('CELERY_BROKER_URL'): {os_celery_broker[:50] if os_celery_broker else 'None'}...")
-                print(f"[Initialize] DEBUG - os.getenv('REDIS_URL'): {os_redis_url[:50] if os_redis_url else 'None'}...")
+                # Also check all environment variables (for debugging)
+                all_redis_vars = {k: v for k, v in os.environ.items() if 'REDIS' in k.upper() or 'CELERY' in k.upper()}
+                print(f"[Initialize] DEBUG - All Redis/Celery env vars: {list(all_redis_vars.keys())}")
+                
+                print(f"[Initialize] DEBUG - os.environ.get('CELERY_BROKER_URL'): {os_celery_broker[:50] if os_celery_broker else 'None'}...")
+                print(f"[Initialize] DEBUG - os.environ.get('CELERY_RESULT_BACKEND'): {os_celery_backend[:50] if os_celery_backend else 'None'}...")
+                print(f"[Initialize] DEBUG - os.environ.get('REDIS_URL'): {os_redis_url[:50] if os_redis_url else 'None'}...")
                 print(f"[Initialize] DEBUG - settings.CELERY_BROKER_URL: {settings.CELERY_BROKER_URL}")
                 print(f"[Initialize] DEBUG - settings.REDIS_URL: {settings.REDIS_URL[:50] if settings.REDIS_URL else 'None'}...")
                 print(f"[Initialize] DEBUG - settings.celery_broker_url property: {settings.celery_broker_url[:50] if settings.celery_broker_url else 'None'}...")
                 
-                # Try os.getenv first (most reliable), then settings
+                # Try os.environ first (most reliable), then settings
                 redis_url = os_celery_broker or os_celery_backend or os_redis_url or settings.celery_broker_url or settings.REDIS_URL
                 print(f"[Initialize] DEBUG - Final redis_url: {redis_url[:50] if redis_url else 'None'}...")
                 
                 if not redis_url or redis_url == "redis://localhost:6379/0":
-                    raise Exception(f"Redis URL not found. os.getenv: CELERY_BROKER_URL={bool(os_celery_broker)}, REDIS_URL={bool(os_redis_url)}, settings: CELERY_BROKER_URL={bool(settings.CELERY_BROKER_URL)}, REDIS_URL={bool(settings.REDIS_URL)}")
+                    # Log all environment variables for debugging
+                    print(f"[Initialize] ERROR - Redis URL not found!")
+                    print(f"[Initialize] ERROR - Available env vars: {list(os.environ.keys())}")
+                    raise Exception(f"Redis URL not found. os.environ: CELERY_BROKER_URL={bool(os_celery_broker)}, CELERY_RESULT_BACKEND={bool(os_celery_backend)}, REDIS_URL={bool(os_redis_url)}, settings: CELERY_BROKER_URL={bool(settings.CELERY_BROKER_URL)}, REDIS_URL={bool(settings.REDIS_URL)}")
                 
                 print(f"[Initialize] Redis URL found: {redis_url[:50]}...")
                 task = initialize_professional_system_task.delay()
